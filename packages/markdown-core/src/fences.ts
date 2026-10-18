@@ -49,6 +49,11 @@ export function scanFenceSpans(
     const markerChar = marker.charAt(0);
     const markerLen = marker.length;
     if (!open) {
+      // CommonMark: a backtick fence's info string cannot contain backticks, so a line like
+      // "```npm i``` now" is inline code in a paragraph, not a fence opener.
+      if (markerChar === "`" && trailing.includes("`")) {
+        continue;
+      }
       open = {
         start,
         markerChar,
