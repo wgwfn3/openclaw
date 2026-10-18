@@ -49,12 +49,26 @@ export function formatByteSize(bytes: number, options: ByteSizeFormatOptions): s
     unitIndex += 1;
   }
 
-  const unit = expectDefined(BYTE_SIZE_UNITS[unitIndex], "byte-size unit");
-  const label = expectDefined(labels[unitIndex], "byte-size label");
-  const fractionDigits =
+  let unit = expectDefined(BYTE_SIZE_UNITS[unitIndex], "byte-size unit");
+  let fractionDigits =
     typeof options.fractionDigits === "function"
       ? options.fractionDigits(value, unit)
       : options.fractionDigits;
+  // Rounding can carry 1023.96 KiB to "1024.0"; show the next unit instead.
+  // Floored units never round up, so they keep the caller's threshold-safe value.
+  if (fractionDigits !== null && !options.floorUnits?.includes(unit)) {
+    const rounded = Number(value.toFixed(fractionDigits));
+    if (rounded >= base && unitIndex < maxUnitIndex) {
+      unitIndex += 1;
+      value /= base;
+      unit = expectDefined(BYTE_SIZE_UNITS[unitIndex], "byte-size unit");
+      fractionDigits =
+        typeof options.fractionDigits === "function"
+          ? options.fractionDigits(value, unit)
+          : options.fractionDigits;
+    }
+  }
+  const label = expectDefined(labels[unitIndex], "byte-size label");
   if (fractionDigits === null) {
     return `${value}${options.separator}${label}`;
   }
