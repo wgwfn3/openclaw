@@ -25,6 +25,13 @@ describe("parseFenceSpans closing-fence rules", () => {
     }
   });
 
+  it("does not open a backtick fence whose info string contains backticks", () => {
+    // CommonMark: "```npm i``` installs it." is a paragraph with inline code, not a fence.
+    expect(parseFenceSpans("```npm i``` installs it.\nprose\n")).toEqual([]);
+    // Tilde fences may carry backticks in their info string.
+    expect(parseFenceSpans("~~~js `x`\ncode\n~~~\n")).toHaveLength(1);
+  });
+
   it("closes fences with CRLF line endings", () => {
     const text = "```\r\ncode\r\n```\r\nafter\r\n";
     const spans = parseFenceSpans(text);
