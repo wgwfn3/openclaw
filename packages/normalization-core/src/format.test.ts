@@ -23,6 +23,16 @@ describe("formatByteSize", () => {
     expect(formatByteSize(bytes, options)).toBe(expected);
   });
 
+  it.each([
+    [1024 * 1024 - 1, "1.0 MiB"],
+    [1024 * 1024 * 1024 - 1, "1.0 GiB"],
+    [1024 * 1024 - 60, "1023.9 KiB"],
+  ] as const)("rolls %s bytes over to the next unit after rounding", (bytes, expected) => {
+    expect(
+      formatByteSize(bytes, { style: "iec", maxUnit: "tera", separator: " ", fractionDigits: 1 }),
+    ).toBe(expected);
+  });
+
   it("supports caller-owned dynamic precision and rounding", () => {
     expect(
       formatByteSize(Math.floor(99.6 * 1024 * 1024), {
@@ -33,6 +43,18 @@ describe("formatByteSize", () => {
         floorUnits: ["kilo", "mega"],
       }),
     ).toBe("99 MB");
+  });
+
+  it("keeps floored units below the next unit", () => {
+    expect(
+      formatByteSize(1024 * 1024 * 1024 - 1, {
+        style: "legacy-binary",
+        maxUnit: "giga",
+        separator: " ",
+        fractionDigits: (_value, unit) => (unit === "giga" ? 1 : unit === "byte" ? null : 0),
+        floorUnits: ["kilo", "mega"],
+      }),
+    ).toBe("1023 MB");
   });
 });
 
